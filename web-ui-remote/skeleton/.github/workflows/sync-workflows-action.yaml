@@ -1,0 +1,121 @@
+name: Sync actions workflow
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs daily at midnight UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+
+jobs:
+  compare-and-pr:
+    env:
+      OWNER: <your_github_owner>
+      TEMPLATE_REPO: web-ui-remote
+
+    runs-on: ubuntu-latest
+    permissions: write-all
+
+    steps:
+      - name: Generate GitHub App token
+        id: generate-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ env.OWNER }}
+
+      - name: Check if PR already exists
+        id: check-pr-created
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          prs=$(gh pr list \
+              --repo "${{ github.repository }}" \
+              --head 'update-template' \
+              --base 'main' \
+              --json title \
+              --jq 'length')
+          if ((prs > 0)); then
+              echo "PR already exists."
+              echo "created=true" >> $GITHUB_OUTPUT
+          else
+              echo "No PR found."
+              echo "created=false" >> $GITHUB_OUTPUT
+          fi
+
+
+      - name: Checkout current repository
+        if: ${{ steps.check-pr-created.outputs.created == 'false' }}
+        uses: actions/checkout@v2
+
+      - name: Clone template repository to temp dir
+        if: ${{ steps.check-pr-created.outputs.created == 'false' }}
+        run: |
+          TEMPLATE_CLONE_DIR=$RUNNER_TEMP/template
+          git clone https://x-access-token:${{ steps.generate-token.outputs.token }}@github.com/${{ env.OWNER }}/${{ env.TEMPLATE_REPO }}.git "$TEMPLATE_CLONE_DIR"
+          cd "$TEMPLATE_CLONE_DIR"
+
+          git checkout main
+          
+          echo "TEMPLATE_CLONE_DIR=$TEMPLATE_CLONE_DIR" >> $GITHUB_ENV
+
+      - name: Compare and update workflow files
+        if: ${{ steps.check-pr-created.outputs.created == 'false' }}
+        id: compare-workflows
+        run: |
+          FOLDERS=(workflows scripts)
+          BASE_TEMPLATE="$TEMPLATE_CLONE_DIR/skeleton/.github"
+          BASE_TARGET=".github"
+
+          changes=false
+
+          git config user.name "GitHub"
+          git config user.email "noreply@github.com"
+
+          for folder in "${FOLDERS[@]}"; do
+            SRC="$BASE_TEMPLATE/$folder"
+            DST="$BASE_TARGET/$folder"
+
+            echo "Processing folder: $folder"
+
+            if [ ! -d "$SRC" ]; then
+              echo "Template folder does not exist: $SRC"
+              continue
+            fi
+
+            mkdir -p "$DST"
+            cp -r "$DST" "$DST.bak"
+
+            rm -rf "$DST"/*
+            cp -ru "$SRC"/. "$DST"
+
+            if ! diff -qr "$DST" "$DST.bak"; then
+              echo "Changes detected in $folder"
+              git add "$DST"
+              changes=true
+            else
+              echo "No changes in $folder"
+            fi
+
+            rm -rf "$DST.bak"
+          done
+
+          echo "changes=$changes" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        if: ${{ steps.check-pr-created.outputs.created == 'false' && steps.compare-workflows.outputs.changes == 'true' }}
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          title: Sync GitHub workflows and scripts
+          body: This PR updates the `.github/workflows` and `.github/scripts` folders with the latest changes from the template repository.
+          branch: update-template
+          author: "GitHub <noreply@github.com>"
+          labels: |
+            automated-pr
+            sync-workflow-actions
+          delete-branch: true

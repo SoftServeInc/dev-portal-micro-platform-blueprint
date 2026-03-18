@@ -1,0 +1,8 @@
+/.vscode/*
+**/.DS_Store
+skeleton/target
+target/
+skeleton/.idea
+skeleton/.vscode
+skeleton/README.md
+/.idea/

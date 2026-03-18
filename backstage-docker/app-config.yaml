@@ -1,0 +1,109 @@
+app:
+  title: Scaffolded Backstage App
+  baseUrl: ${APP_BASE_URL:-http://localhost:7007}
+
+organization:
+  name: ${ORGANIZATION_NAME:-SoftServe}
+
+backend:
+  logging:
+    level: debug
+    format: json
+  baseUrl: ${BACKEND_BASE_URL:-http://localhost:7007}
+  listen:
+    port: 7007
+    host: 0.0.0.0
+  csp:
+    connect-src: ["'self'", 'http:', 'https:']
+    upgrade-insecure-requests: false
+  cors:
+    origin: ${APP_BASE_URL:-http://localhost:7007}
+    methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
+    credentials: true
+    Access-Control-Allow-Origin: '*'
+  database:
+    config options: https://node-postgres.com/apis/client
+    client: pg
+    connection:
+      host: ${POSTGRES_HOST}
+      port: ${POSTGRES_PORT}
+      user: ${POSTGRES_USER}
+      password: ${POSTGRES_PASSWORD}
+
+integrations:
+  github:
+    - apps:
+        - appId: ${AUTH_ORG_APP_ID}
+          clientId: ${AUTH_ORG_CLIENT_ID}
+          clientSecret: ${AUTH_ORG_CLIENT_SECRET}
+          webhookSecret: webhook_secret
+          privateKey: ${AUTH_ORG_PRIVATE_KEY}
+      host: github.com
+
+proxy:
+
+techdocs:
+  builder: 'local'
+  generator:
+    runIn: 'local'
+  publisher:
+    type: 'local'
+
+auth:
+  environment: development
+  providers:
+    github:
+      development:
+        debug: true
+        clientId: ${AUTH_ORG_CLIENT_ID}
+        clientSecret: ${AUTH_ORG_CLIENT_SECRET}
+        enterpriseOrganization: ${AUTH_ORG_ENTERPRISE_ORGANIZATION}
+        signIn:
+          resolvers:
+            - resolver: usernameMatchingUserEntityName
+
+scaffolder:
+
+catalog:
+  providers:
+    githubOrg:
+      id: development
+      githubUrl: ${AUTH_GITHUB_ENTERPRISE_INSTANCE_URL}
+      orgs:
+        - ${AUTH_ORG_ENTERPRISE_ORGANIZATION}
+      schedule:
+        initialDelay: { seconds: 30 }
+        frequency: { hours: 1 }
+        timeout: { minutes: 50 }
+    github:
+      catalogEntitiesProvider:
+        organization: ${AUTH_ORG_ENTERPRISE_ORGANIZATION}
+        catalogPath: '/*.yaml'
+        filters:
+          branch: 'main'
+          repository: '.*'
+        schedule:
+          initialDelay: { seconds: 30 }
+          frequency: { minutes: 30 }
+          timeout: { minutes: 5 }
+      apiDefProvider:
+        organization: ${AUTH_ORG_ENTERPRISE_ORGANIZATION}
+        catalogPath: '/**/*-api-def.yaml'
+        filters:
+          branch: 'main'
+          repository: '.*'
+        schedule:
+          initialDelay: { seconds: 30 }
+          frequency: { minutes: 30 }
+          timeout: { minutes: 3 }
+  import:
+    entityFilename: catalog-info.yaml
+    pullRequestBranchName: backstage-integration
+  rules:
+    - allow: [Component, System, Domain, API, Resource, Location, Template, Group, User]
+  locations: []
+
+kubernetes:
+
+permission:
+  enabled: true

@@ -1,0 +1,14 @@
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: $API_NAME
+  description: $API_DESCRIPTION
+  tags:
+    - openapi
+spec:
+  type: openapi
+  lifecycle: experimental
+  owner: group:coe-solarch
+  definition:
+    $text: ./$SPEC_NAME.yaml
+  system: system:default/web-ui-remote

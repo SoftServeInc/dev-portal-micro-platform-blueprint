@@ -1,0 +1,9 @@
+.idea
+.env
+.env-local
+yarn.lock
+backstage/
+logger-plugin/
+oauth-pkce-token-generator-backend-plugin/
+oauth-pkce-token-generator-plugin/
+postgres-data/

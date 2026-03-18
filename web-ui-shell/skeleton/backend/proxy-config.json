@@ -1,0 +1,10 @@
+{
+  "mappings": {
+    "/store/*": [
+      "http://localhost:8888/api/v2"
+    ],
+    "/service2/*": [
+      "http://localhost:3004/api/v2"
+    ]
+  }
+}

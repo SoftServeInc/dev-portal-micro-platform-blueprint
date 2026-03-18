@@ -1,0 +1,18 @@
+{
+  "extends": "@backstage/cli/config/tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist-types",
+    "rootDir": ".",
+    "strict": true,
+    "lib": [
+      "es2015",
+      "DOM",
+      "DOM.Iterable",
+      "ESNext"
+    ],
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react" // or "react-native"
+  },
+  "include": ["src", "dev"],
+  "exclude": ["node_modules"]
+}

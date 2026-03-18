@@ -1,0 +1,3 @@
+This repository contains a script that allows to create a fresh instance
+of Backstage, install all the necessary plugins, and build a docker image that
+will be ready to be run locally or deployed to AWS EC2 instance using **docker compose**.

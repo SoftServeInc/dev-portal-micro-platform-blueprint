@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+
+
+    "target": "ESNext", // Ensures compatibility with modern JavaScript features
+    "module": "ESNext", // Use ES modules for `import`/`export`
+    "moduleResolution": "Node", // Resolves modules in Node.js style
+    "esModuleInterop": true, // Ensures compatibility with CommonJS modules
+    "skipLibCheck": true, // Skips type checking for node_modules
+    "forceConsistentCasingInFileNames": true,
+
+    /* Bundler mode */
+
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["src"]
+}

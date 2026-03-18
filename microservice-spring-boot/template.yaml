@@ -1,0 +1,121 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: microservice-spring-boot-template
+  title: SoftServe Java Spring Boot Microservice Template
+  description: |
+    Template to create a production-ready Java Spring Boot Microservice that implements clean architecture,
+    api-first with openapi and CI/CD out of the box.
+  annotations:
+    backstage.io/template-version: 2.0.0
+  tags:
+    - recommended
+    - java
+    - maven
+spec:
+  system: microservice-spring-boot
+  owner: group:coe-solarch
+  type: service
+
+  parameters:
+    - title: Provide information about the new component
+      required:
+        - name
+        - description
+        - system
+      properties:
+        name:
+          title: Service name
+          type: string
+          default: java-service
+        description:
+          title: Description
+          type: string
+          description: A production-ready Java Spring Boot Microservice that implements clean architecture, api-first with openapi and CI/CD out of the box
+        system:
+          title: System
+          type: string
+          description: System of the component
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: System
+
+    - title: Select the owner of the new component
+      required:
+        - owner
+      properties:
+        owner:
+          title: Service Owner
+          type: string
+          description: Owner of the newly created component in the Backstage catalog
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+
+    - title: Choose a location
+      required:
+        - repoUrl
+        - repoBranch
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          description: Organization that owns the repository in github
+          ui:field: RepoUrlPicker
+          ui:options:
+#            allowedOrganizations:
+#              - gh-42172
+            requestUserCredentials:
+              secretsKey: USER_OAUTH_TOKEN
+            allowedHosts:
+              - github.com
+        repoBranch:
+          title: Repository Branch
+          type: string
+          default: main
+          ui:field: RepoBranchPicker
+          ui:options:
+            requestUserCredentials:
+              secretsKey: USER_OAUTH_TOKEN
+
+  steps:
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:template
+      input:
+        url: ./skeleton
+        copyWithoutTemplating:
+          - .github/workflows/*
+        values:
+          name: ${{ parameters.name }}
+          system: ${{ parameters.system }}
+          description: ${{ parameters.description }}
+          destination: ${{ parameters.repoUrl | parseRepoUrl }}
+          owner: ${{ parameters.owner }}
+
+    - id: publish
+      name: Publishing to the Source Code Repository
+      action: publish:github
+      input:
+        description: ${{ parameters.description }}
+        repoUrl: ${{ parameters.repoUrl }}
+        token: ${{ secrets.USER_OAUTH_TOKEN }}
+        defaultBranch: ${{ parameters.repoBranch }}
+        repoVisibility: private
+
+    - id: register
+      name: Register
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: "/catalog-info.yaml"
+
+  output:
+    links:
+      - title: Open the Source Code Repository
+        url: ${{ steps['publish'].output.repoContentsUrl }}
+      - title: Open the Catalog Info Component
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}

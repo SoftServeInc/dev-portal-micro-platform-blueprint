@@ -1,0 +1,7 @@
+target/**
+.vscode/**
+.idea/**
+.DS_Store
+**/.DS_Store
+.github/scripts/lib/
+.github/scripts/*.class

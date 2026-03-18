@@ -1,0 +1,68 @@
+services:
+  postgres:
+    image: postgres:17.7
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: rootpassword
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - backstage-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backstage:
+    image: backstage
+    container_name: backstage
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "7007:7007"
+    networks:
+      - backstage-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.2.2
+    container_name: keycloak
+    restart: unless-stopped
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: change_me
+      KC_HOSTNAME_STRICT: false
+      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/data/import/server.crt.pem
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/data/import/server.key.pem
+      KC_PROXY: edge
+      # Database configuration
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+    volumes:
+      - ./keycloak/data:/opt/keycloak/data/import
+    command: ["start", "--import-realm"]
+    ports:
+      - "8443:8443"
+    networks:
+      - backstage-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+networks:
+  backstage-network:
+    name: backstage-network
+volumes:
+  postgres-data:

@@ -1,0 +1,6 @@
+site_name: ${{ values.destination.repo }}
+site_description: ${{ values.description }}
+plugins:
+  - techdocs-core
+nav:
+  - Getting Started: index.md
