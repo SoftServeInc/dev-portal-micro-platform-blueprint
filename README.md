@@ -221,7 +221,7 @@ If you want to contribute to the project, please follow these steps:
    ```
    Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`, `perf`
 4. Push to your branch: `git push origin <branch-name>`
-5. Create a Pull Request to the `main` branch.
+5. Create a Pull Request to the `master` branch.
 6. Address review comments and wait for approval.
 
 
